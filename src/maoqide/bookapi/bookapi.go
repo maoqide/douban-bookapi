@@ -12,21 +12,26 @@ import (
 )
 
 const (
-	SEARCH_URL      = "https://api.douban.com/v2/book/search"
-	ISBN_SEARCH_URL = "https://api.douban.com/v2/book/isbn/"
+	SEARCH_URL        = "https://api.douban.com/v2/book/search"
+	ISBN_SEARCH_URL   = "https://api.douban.com/v2/book/isbn/"
+	SERIES_SEARCH_URL = "https://api.douban.com/v2/book/series/"
+)
+
+var (
+	client = &http.Client{}
 )
 
 //q			查询关键字		q和tag必传其一
 //tag		查询的tag		q和tag必传其一
 //start		取结果的offset	默认为0
 //count		取结果的条数		默认为20，最大为100
-func search(q, tag, start, count string) (books []entity.Book, err error) {
+func search(q, tag, start, count string) (response entity.Response, err error) {
 
 	if q == "" && tag == "" {
-
-		return nil, errors.New("q & tag both null")
+		err = errors.New("q & tag both null")
+		return
 	}
-	client := &http.Client{}
+	//client := &http.Client{}
 
 	//generate request
 	request := SEARCH_URL + "?"
@@ -48,23 +53,22 @@ func search(q, tag, start, count string) (books []entity.Book, err error) {
 	//http get
 	resp, _ := client.Get(request)
 
-	response := entity.Response{}
+	response = entity.Response{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		fmt.Errorf(err.Error())
 		return
 	}
-	books = response.Books
 	return
 }
 
-func keywordSearch(q string) (books []entity.Book, err error) {
+func keywordSearch(q string) (response entity.Response, err error) {
 	return search(q, "", "", "")
 }
 
 func isbnSearch(isbn string) (book entity.Book, err error) {
 
-	client := &http.Client{}
+	//client := &http.Client{}
 	request := ISBN_SEARCH_URL + isbn
 
 	//http get
@@ -83,9 +87,28 @@ func isbnSearch(isbn string) (book entity.Book, err error) {
 
 }
 
+func seriesSearch(id string) (response entity.Response, err error) {
+
+	request := SERIES_SEARCH_URL + id + "/books"
+
+	//http get
+	resp, _ := client.Get(request)
+
+	response = entity.Response{}
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return
+	}
+	return
+
+}
+
 func Test() {
-	books, _ := keywordSearch("python")
-	print(books[2].Title)
+	resp, _ := keywordSearch("python")
+	println(resp.Total)
 	b, _ := isbnSearch("7505715666")
-	print(b.Title)
+	println(b.Title)
+	resp2, _ := seriesSearch("2")
+	println(resp2.Books[0].Series.Title)
 }

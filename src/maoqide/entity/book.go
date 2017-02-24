@@ -32,6 +32,8 @@ type Book struct {
 	Summary      string   `json:"summary"`
 	Series       Series   `json:"series"`
 	Price        string   `json:"price"`
+	ebook_price  string   `json:"price"`
+	ebook_url    string   `json:"price"`
 }
 
 type Rate struct {

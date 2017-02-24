@@ -1,0 +1,6 @@
+exclude everything except directory src/deployer
+douban-bookapi
+/bin/*
+/pkg/*
+/src/*
+!/src/maoqide

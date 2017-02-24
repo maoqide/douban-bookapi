@@ -29,7 +29,8 @@ type Book struct {
 	Url          string   `json:"url"`
 	Alt_title    string   `json:"alt_title"`
 	Author_intro string   `json:"author_intro"`
-	Pummary      string   `json:"summary"`
+	Summary      string   `json:"summary"`
+	Series       Series   `json:"series"`
 	Price        string   `json:"price"`
 }
 
@@ -50,4 +51,9 @@ type Image struct {
 	Small  string `json:"small"`
 	Large  string `json:"large"`
 	Medium string `json:"medium"`
+}
+
+type Series struct {
+	Id    string `json:"id"`
+	Title string `json:"title"`
 }

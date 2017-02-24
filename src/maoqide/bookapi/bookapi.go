@@ -3,6 +3,7 @@ package bookapi
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	//"io/ioutil"
 	"net/http"
 	"strings"
@@ -11,18 +12,19 @@ import (
 )
 
 const (
-	SEARCH_URL = "https://api.douban.com/v2/book/search"
+	SEARCH_URL      = "https://api.douban.com/v2/book/search"
+	ISBN_SEARCH_URL = "https://api.douban.com/v2/book/isbn/"
 )
 
 //q			查询关键字		q和tag必传其一
 //tag		查询的tag		q和tag必传其一
 //start		取结果的offset	默认为0
 //count		取结果的条数		默认为20，最大为100
-func search(q, tag, start, count string) (response entity.Response, err error) {
+func search(q, tag, start, count string) (books []entity.Book, err error) {
 
 	if q == "" && tag == "" {
 
-		return entity.Response{}, errors.New("q & tag both null")
+		return nil, errors.New("q & tag both null")
 	}
 	client := &http.Client{}
 
@@ -42,37 +44,48 @@ func search(q, tag, start, count string) (response entity.Response, err error) {
 	}
 
 	request = strings.TrimSuffix(request, "&")
-	//request := SEARCH_URL + "?q=" + q + "&tag=" + tag + "&start=" + start + "&count=" + count
 
-	//print(request)
+	//http get
 	resp, _ := client.Get(request)
-
-	response, _ = convertResp(resp)
-
-	//out, _ := json.Marshal(response)
-	//print(string(out))
-	return
-}
-
-func keywordSearch(q string) (response entity.Response, err error) {
-	return search(q, "", "", "")
-}
-
-func convertResp(resp *http.Response) (response entity.Response, err error) {
-
-	//body, err := ioutil.ReadAll(resp.Body)
-	//if err != nil {
-
-	//}
-
-	//respJson := string(body)
 
 	response := entity.Response{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
-
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return
+	}
+	books = response.Books
 	return
 }
 
+func keywordSearch(q string) (books []entity.Book, err error) {
+	return search(q, "", "", "")
+}
+
+func isbnSearch(isbn string) (book entity.Book, err error) {
+
+	client := &http.Client{}
+	request := ISBN_SEARCH_URL + isbn
+
+	//http get
+	resp, _ := client.Get(request)
+
+	response := entity.Book{}
+	err = json.NewDecoder(resp.Body).Decode(&response)
+
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return
+	}
+	book = response
+
+	return
+
+}
+
 func Test() {
-	search("python", "", "", "")
+	books, _ := keywordSearch("python")
+	print(books[2].Title)
+	b, _ := isbnSearch("7505715666")
+	print(b.Title)
 }

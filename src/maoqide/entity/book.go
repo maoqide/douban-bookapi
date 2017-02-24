@@ -19,7 +19,7 @@ type Book struct {
 	Translator   []string `json:"translator"`
 	Catalog      string   `json:"catalog"`
 	Pages        string   `json:"pages"`
-	Images       []Image  `json:"images"`
+	Images       Images   `json:"images"`
 	Alt          string   `json:"alt"`
 	Id           string   `json:"id"`
 	Publisher    string   `json:"publisher"`
@@ -49,7 +49,7 @@ type Tag struct {
 	Title string `json:"title"`
 }
 
-type Image struct {
+type Images struct {
 	Small  string `json:"small"`
 	Large  string `json:"large"`
 	Medium string `json:"medium"`

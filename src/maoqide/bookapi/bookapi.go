@@ -6,6 +6,7 @@ import (
 	"fmt"
 	//"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"maoqide/entity"
@@ -104,11 +105,37 @@ func seriesSearch(id string) (response entity.Response, err error) {
 
 }
 
+func searchAll(q, tag string) (books []entity.Book, err error) {
+	start, COUNT := 0, 100
+	books = make([]entity.Book, 0, 100)
+	for {
+		response, err1 := search(q, tag, strconv.Itoa(start), strconv.Itoa(COUNT))
+		if err1 != nil {
+			err = err1
+			//err = errors.New("error when execute searchAll")
+			return
+		}
+		bs := response.Books
+		books = append(books, bs...)
+		start = start + COUNT
+		if len(bs) < 100 {
+			break
+		}
+	}
+
+	return
+}
+
 func Test() {
-	resp, _ := keywordSearch("python")
-	println(resp.Total)
-	b, _ := isbnSearch("7505715666")
-	println(b.Title)
-	resp2, _ := seriesSearch("2")
-	println(resp2.Books[0].Series.Title)
+	//resp, _ := keywordSearch("python")
+	//println(resp.Total)
+	//b, _ := isbnSearch("7505715666")
+	//println(b.Title)
+	//resp2, _ := seriesSearch("2")
+	//println(resp2.Books[0].Series.Title)
+	bs, _ := searchAll("python", "python")
+	//println(len(bs))
+	out, _ := json.Marshal(bs)
+	println(string(out))
+
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 )
 
 const (
@@ -20,28 +19,28 @@ const (
 )
 
 type Resource interface {
-	Get(values url.Values) (int, interface{})
-	Post(values url.Values) (int, interface{})
-	Put(values url.Values) (int, interface{})
-	Delete(values url.Values) (int, interface{})
+	Get(request *http.Request) (int, interface{})
+	Post(request *http.Request) (int, interface{})
+	Put(request *http.Request) (int, interface{})
+	Delete(request *http.Request) (int, interface{})
 	ConvertData(interface{}) ([]byte, error)
 }
 
 type ResourceBase struct{}
 
-func (ResourceBase) Get(values url.Values) (int, interface{}) {
+func (ResourceBase) Get(request *http.Request) (int, interface{}) {
 	return http.StatusMethodNotAllowed, ""
 }
 
-func (ResourceBase) Post(values url.Values) (int, interface{}) {
+func (ResourceBase) Post(request *http.Request) (int, interface{}) {
 	return http.StatusMethodNotAllowed, ""
 }
 
-func (ResourceBase) Put(values url.Values) (int, interface{}) {
+func (ResourceBase) Put(request *http.Request) (int, interface{}) {
 	return http.StatusMethodNotAllowed, ""
 }
 
-func (ResourceBase) Delete(values url.Values) (int, interface{}) {
+func (ResourceBase) Delete(request *http.Request) (int, interface{}) {
 	return http.StatusMethodNotAllowed, ""
 }
 
@@ -66,17 +65,16 @@ func (server *Server) requestHandler(resource Resource) http.HandlerFunc {
 
 		request.ParseForm()
 		method := request.Method
-		values := request.Form
 		//body := request.Body
 		switch method {
 		case MethodGet:
-			code, data = resource.Get(values)
+			code, data = resource.Get(request)
 		case MethodPost:
-			code, data = resource.Post(values)
+			code, data = resource.Post(request)
 		case MethodPut:
-			code, data = resource.Put(values)
+			code, data = resource.Put(request)
 		case MethodDelete:
-			code, data = resource.Delete(values)
+			code, data = resource.Delete(request)
 		default:
 			server.Abort(rw, http.StatusMethodNotAllowed) //405
 			return
@@ -109,11 +107,11 @@ type Test struct {
 }
 
 // Override the Get method
-func (t Test) Get(values url.Values) (int, interface{}) {
+func (t Test) Get(request *http.Request) (int, interface{}) {
 
 	//result, _ := json.Marshal(values)
 	//return http.StatusOK, string(result)
-	return http.StatusOK, values
+	return http.StatusOK, request.Body
 }
 
 func main() {

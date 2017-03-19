@@ -1,4 +1,4 @@
-package main
+package testserver
 
 import (
 	"encoding/json"
@@ -24,6 +24,7 @@ type Resource interface {
 	Post(values url.Values) (int, interface{})
 	Put(values url.Values) (int, interface{})
 	Delete(values url.Values) (int, interface{})
+	ConvertData(interface{}) ([]byte, error)
 }
 
 type ResourceBase struct{}
@@ -44,22 +45,29 @@ func (ResourceBase) Delete(values url.Values) (int, interface{}) {
 	return http.StatusMethodNotAllowed, ""
 }
 
-type API struct{}
+func (ResourceBase) ConvertData(data interface{}) (content []byte, err error) {
 
-func (api *API) Abort(rw http.ResponseWriter, statusCode int) {
+	//convert data format to response
+	//default json
+	content, err = json.Marshal(data)
+	return
+}
+
+type Server struct{}
+
+func (server *Server) Abort(rw http.ResponseWriter, statusCode int) {
 	rw.WriteHeader(statusCode)
 }
 
-func (api *API) requestHandler(resource Resource) http.HandlerFunc {
+func (server *Server) requestHandler(resource Resource) http.HandlerFunc {
 	return func(rw http.ResponseWriter, request *http.Request) {
-
 		var data interface{}
 		var code int
 
 		request.ParseForm()
 		method := request.Method
 		values := request.Form
-
+		//body := request.Body
 		switch method {
 		case MethodGet:
 			code, data = resource.Get(values)
@@ -70,13 +78,13 @@ func (api *API) requestHandler(resource Resource) http.HandlerFunc {
 		case MethodDelete:
 			code, data = resource.Delete(values)
 		default:
-			api.Abort(rw, http.StatusMethodNotAllowed) //405
+			server.Abort(rw, http.StatusMethodNotAllowed) //405
 			return
 		}
 
-		content, err := json.Marshal(data)
+		content, err := resource.ConvertData(data)
 		if err != nil {
-			api.Abort(rw, http.StatusInternalServerError) //500
+			server.Abort(rw, http.StatusInternalServerError) //500
 			return
 		}
 		rw.WriteHeader(code)
@@ -84,12 +92,14 @@ func (api *API) requestHandler(resource Resource) http.HandlerFunc {
 	}
 }
 
-func (api *API) AddResource(resource Resource, path string) {
-	http.HandleFunc(path, api.requestHandler(resource))
+func (server *Server) AddResource(resource Resource, path string) {
+	http.HandleFunc(path, server.requestHandler(resource))
 }
 
-func (api *API) Start(port int) {
+func (server *Server) Start(port int) {
 	portString := fmt.Sprintf(":%d", port)
+	fmt.Println("Rest Server started on port" + portString)
+
 	http.ListenAndServe(portString, nil)
 }
 
@@ -100,12 +110,15 @@ type Test struct {
 
 // Override the Get method
 func (t Test) Get(values url.Values) (int, interface{}) {
-	return http.StatusOK, "YAY"
+
+	//result, _ := json.Marshal(values)
+	//return http.StatusOK, string(result)
+	return http.StatusOK, values
 }
 
 func main() {
 	var a Test
-	api := API{}
-	api.AddResource(a, "/")
-	api.Start(4000)
+	server := Server{}
+	server.AddResource(a, "/")
+	server.Start(4009)
 }
